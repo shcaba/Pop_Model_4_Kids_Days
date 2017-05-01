@@ -46,7 +46,7 @@ shark.in<-list(maxage=95,
                   Sel.a=50,
                   Sel.b=0.5)
 
-save(rockfish.in,file="C:/Users/Jason.Cope/Documents/GitHub/Pop_Model_4_Kids_Days/rockfish.DMP")
-save(flatfish.in,file="C:/Users/Jason.Cope/Documents/GitHub/Pop_Model_4_Kids_Days/flatfish.DMP")
-save(shark.in,file="C:/Users/Jason.Cope/Documents/GitHub/Pop_Model_4_Kids_Days/shark.DMP")
+#save(rockfish.in,file="C:/Users/Jason.Cope/Documents/GitHub/Pop_Model_4_Kids_Days/rockfish.DMP")
+#save(flatfish.in,file="C:/Users/Jason.Cope/Documents/GitHub/Pop_Model_4_Kids_Days/flatfish.DMP")
+#save(shark.in,file="C:/Users/Jason.Cope/Documents/GitHub/Pop_Model_4_Kids_Days/shark.DMP")
 
