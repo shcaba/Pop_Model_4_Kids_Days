@@ -176,6 +176,50 @@ shinyServer(
       return(Pop.out.shark)
     })
     
+    Pop.out.custom<- reactive({
+      species.in<-shark.in
+      species.in$maxage<-input$Max_age_cs
+      species.in$Linf<-input$Linf_cs
+      species.in$K<-input$k_cs
+      species.in$t0<-input$t0_cs
+      species.in$R0<-input$R0_cs
+      species.in$M<-input$M_cs
+      species.in$a_i<-input$a_i_cs
+      species.in$steep<-input$h_cs
+      species.in$Ltwt.a<-input$LW_a_cs
+      species.in$Ltwt.b<-input$LW_b_cs
+      species.in$Mat.a<-input$Mat_a_cs
+      species.in$Mat.b<-input$Mat_L50_cs
+      species.in$Sel.a<-input$Sel_a_cs
+      species.in$Sel.b<-input$Sel_b_cs
+      ages=c(0:species.in$maxage)  
+      Sel= HCR.Log.Sel.fit(c(species.in$Sel.a,species.in$Sel.b),ages)
+      Lt.out<-HCR.VBGF(species.in$Linf,species.in$K,species.in$t0,ages)
+      Maturity<-Maturity<-HCR.Mat.fit(c(species.in$Mat.a,species.in$Mat.b),Lt.out)
+      Weight<-HCR.LtWt.fit(c(species.in$Ltwt.a,species.in$Ltwt.b),Lt.out)
+      
+      Num_all<-Num_F<-Num_M<-matrix(NA,length(ages),input$years.custom+1)
+      SB.ts<-Rec.ts<-rep(NA,input$years.custom+1)
+      
+      Num<-Numbers(R_in=species.in$R0,species.in$M,F_yr=0,Sel,ages,species.in$a_i)
+      Num_all[,1]<-rowSums(Num)
+      Num_F[,1]<-Num[,1]
+      Num_M[,2]<-Num[,2]
+      SB.ts[1]<-SpawnB(R_in=species.in$R0,Maturity,Weight,species.in$M,F_yr=0,Sel,ages,species.in$a_i)
+      Rec.ts[1]<-BHRecruit.max(R0=species.in$R0,Rt=species.in$R0,species.in$steep,Weight,Maturity,species.in$M,F_yr=0,Sel,ages,species.in$a_i,sigmaR=0)
+      for(i in 1:input$years.custom)
+      {
+        Num<-Numbers(R_in=Rec.ts[i],species.in$M,F_yr=input$F.in.custom,Sel,ages,species.in$a_i)
+        Num_all[,i+1]<-rowSums(Num)
+        Num_F[,i+1]<-Num[,1]
+        Num_M[,i+1]<-Num[,2]
+        SB.ts[i+1]<-SpawnB(R_in=Rec.ts[i],Maturity,Weight,species.in$M,F_yr=input$F.in.custom,Sel,ages,species.in$a_i)
+        Rec.ts[i+1]<-BHRecruit.max(R0=species.in$R0,Rt=Rec.ts[i],species.in$steep,Weight,Maturity,species.in$M,F_yr=input$F.in.custom,Sel,ages,species.in$a_i,sigmaR=0.1)
+      }
+      Pop.out.custom<-list(Num_all,Num_F,Num_M,SB.ts,Rec.ts)
+      names(Pop.out.custom)<-c("Numbers_all","Numbers_F","Numbers_M","SB","Rec")
+      return(Pop.out.custom)
+    })
     
        output$rockfish_pop <- renderPlot({
        Pop.out.rockfish<-Pop.out.rockfish()
@@ -183,7 +227,13 @@ shinyServer(
        SB.gg<-as.data.frame(cbind(c(1:(input$years.rockfish+1)),Pop.out.rockfish$SB))
        names(SB.gg)<-c("Year","SB")
        extict<-SB.gg$SB==0
-       rockfish_pop<-ggplot(data=SB.gg,aes(x=Year,y=SB))+geom_line(col="orange",lwd=1.5)+ylim(0, max(SB.gg$SB)*1.1)+geom_line(data=SB.gg[extict,],col="black",lwd=1.5)
+       rockfish_pop<-ggplot(data=SB.gg,aes(x=Year,y=SB))+
+         geom_line(col="orange",lwd=1.5)+
+         ylim(0, max(SB.gg$SB)*1.1)+
+         geom_line(data=SB.gg[extict,],col="black",lwd=1.5)+
+         annotate("text", -Inf, Inf, label = paste("Scale_0=",round(SB.gg$SB[1],0)), hjust = 0, vjust = 1,size=8,color="orange")+
+         annotate("text", -Inf, Inf, label = paste("Scale_end=",round(SB.gg$SB[length(SB.gg$SB)],0)), hjust = -1.1, vjust = 1,size=8,color="orange")+
+         annotate("text", -Inf, Inf, label = paste("Status=",round(SB.gg$SB[length(SB.gg$SB)]/SB.gg$SB[1],2)), hjust = -3.5, vjust = 1,size=8,color="orange")
        print(rockfish_pop)
      })
 
@@ -193,7 +243,13 @@ shinyServer(
        SB.gg<-as.data.frame(cbind(c(1:(input$years.flatfish+1)),Pop.out.flatfish$SB))
        names(SB.gg)<-c("Year","SB")
        extict<-SB.gg$SB==0
-       flatfish_pop<-ggplot(data=SB.gg,aes(x=Year,y=SB))+geom_line(col="green",lwd=1.5)+ylim(0, max(SB.gg$SB)*1.1)+geom_line(data=SB.gg[extict,],col="black",lwd=1.5)
+       flatfish_pop<-ggplot(data=SB.gg,aes(x=Year,y=SB))+
+         geom_line(col="green",lwd=1.5)+
+         ylim(0, max(SB.gg$SB)*1.1)+
+         geom_line(data=SB.gg[extict,],col="black",lwd=1.5)+
+         annotate("text", -Inf, Inf, label = paste("Scale_0=",round(SB.gg$SB[1],0)), hjust = 0, vjust = 1,size=8,color="green")+
+         annotate("text", -Inf, Inf, label = paste("Scale_end=",round(SB.gg$SB[length(SB.gg$SB)],0)), hjust = -1.1, vjust = 1,size=8,color="green")+
+         annotate("text", -Inf, Inf, label = paste("Status=",round(SB.gg$SB[length(SB.gg$SB)]/SB.gg$SB[1],2)), hjust = -3.5, vjust = 1,size=8,color="green")
        print(flatfish_pop)
        })
      
@@ -203,8 +259,30 @@ shinyServer(
        SB.gg<-as.data.frame(cbind(c(1:(input$years.shark+1)),Pop.out.shark$SB))
        names(SB.gg)<-c("Year","SB")
        extict<-SB.gg$SB==0
-       shark_pop<-ggplot(data=SB.gg,aes(x=Year,y=SB))+geom_line(col="blue",lwd=1.5)+ylim(0, max(SB.gg$SB)*1.1)+geom_line(data=SB.gg[extict,],col="black",lwd=1.5)
+       shark_pop<-ggplot(data=SB.gg,aes(x=Year,y=SB))+
+         geom_line(col="blue",lwd=1.5)+
+         ylim(0, max(SB.gg$SB)*1.1)+
+         geom_line(data=SB.gg[extict,],col="black",lwd=1.5)+
+         annotate("text", -Inf, Inf, label = paste("Scale_0=",round(SB.gg$SB[1],0)), hjust = 0, vjust = 1,size=8,color="blue")+
+         annotate("text", -Inf, Inf, label = paste("Scale_end=",round(SB.gg$SB[length(SB.gg$SB)],0)), hjust = -1.1, vjust = 1,size=8,color="blue")+
+         annotate("text", -Inf, Inf, label = paste("Status=",round(SB.gg$SB[length(SB.gg$SB)]/SB.gg$SB[1],2)), hjust = -3.5, vjust = 1,size=8,color="blue")
        print(shark_pop)
+     })
+     
+     output$custom_pop <- renderPlot({
+       Pop.out.custom<-Pop.out.custom()
+       for(i in 1:length(Pop.out.custom$SB)){if(Pop.out.custom$SB[i]<0){Pop.out.custom$SB[i:length(Pop.out.custom$SB)]=0}}
+       SB.gg<-as.data.frame(cbind(c(1:(input$years.custom+1)),Pop.out.custom$SB))
+       names(SB.gg)<-c("Year","SB")
+       extict<-SB.gg$SB==0
+       custom_pop<-ggplot(data=SB.gg,aes(x=Year,y=SB))+
+         geom_line(col="purple",lwd=1.5)+
+         ylim(0, max(SB.gg$SB)*1.1)+
+         geom_line(data=SB.gg[extict,],col="black",lwd=1.5)+
+         annotate("text", -Inf, Inf, label = paste("Scale_0=",round(SB.gg$SB[1],0)), hjust = 0, vjust = 1,size=8,color="purple")+
+         annotate("text", -Inf, Inf, label = paste("Scale_end=",round(SB.gg$SB[length(SB.gg$SB)],0)), hjust = -1.1, vjust = 1,size=8,color="purple")+
+         annotate("text", -Inf, Inf, label = paste("Status=",round(SB.gg$SB[length(SB.gg$SB)]/SB.gg$SB[1],2)), hjust = -3.5, vjust = 1,size=8,color="purple")
+       print(custom_pop)
      })
      
   }
